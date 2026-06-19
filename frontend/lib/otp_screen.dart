@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 import 'package:dio/dio.dart';
+import 'registration_screens.dart'; // <--- Подключаем карусель регистрации
 
 class OtpScreen extends StatefulWidget {
   final String phoneNumber;
@@ -18,7 +19,7 @@ class _OtpScreenState extends State<OtpScreen> {
   String _code = "";
   bool _isLoading = false;
   
-  // Добавляем флаги для отслеживания статуса ввода
+  // Флаги для отслеживания статуса ввода (цвета обводки)
   bool _hasError = false;
   bool _isSuccess = false;
 
@@ -46,7 +47,7 @@ class _OtpScreenState extends State<OtpScreen> {
     super.dispose();
   }
 
-  // Функция проверки кода
+  // Функция проверки кода и маршрутизации
   Future<void> _verifyCode() async {
     if (_code.length < 5) return;
 
@@ -67,21 +68,38 @@ class _OtpScreenState extends State<OtpScreen> {
       if (response.statusCode == 200) {
         if (!mounted) return;
         
-        // Включаем зеленую обводку
+        // Включаем зеленую обводку ячеек
         setState(() => _isSuccess = true);
         
-        // Ждем 1 секунду, чтобы пользователь насладился зеленым цветом успеха
+        // Ждем 1 секунду, чтобы пользователь увидел зеленый цвет
         await Future.delayed(const Duration(seconds: 1));
         
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Успешная авторизация! 🎉', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
-        );
-        // В БУДУЩЕМ ЗДЕСЬ БУДЕТ ПЕРЕХОД НА ГЛАВНЫЙ ЭКРАН
-        // Navigator.pushReplacement(...)
+        
+        // Читаем из ответа бэкенда: новый это пользователь или нет?
+        final isNewUser = response.data['is_new_user'] ?? false;
+        
+        if (isNewUser) {
+          // НОВЫЙ ПОЛЬЗОВАТЕЛЬ: Открываем карусель регистрации и передаем номер
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RegistrationFlow(phoneNumber: widget.phoneNumber),
+            ),
+          );
+        } else {
+          // СТАРЫЙ ПОЛЬЗОВАТЕЛЬ: Пускаем сразу в приложение
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('С возвращением во Фликер! 🎉', style: TextStyle(color: Colors.white)), 
+              backgroundColor: Colors.green,
+            ),
+          );
+          // В будущем здесь будет Navigator.pushReplacement на Главную ленту
+        }
       }
     } catch (e) {
-      // Если сервер выдал ошибку (код неверный) - включаем красную обводку
+      // ОШИБКА: Неверный код
       if (mounted) {
         setState(() => _hasError = true);
       }
@@ -90,7 +108,7 @@ class _OtpScreenState extends State<OtpScreen> {
     }
   }
 
-  // Функция повторной отправки
+  // Функция повторной отправки кода
   Future<void> _resendCode() async {
     if (_secondsLeft > 0) return;
     
@@ -203,17 +221,16 @@ class _OtpScreenState extends State<OtpScreen> {
               ),
               const SizedBox(height: 32),
               
-              // САМ ВВОД КОДА
+              // ВВОД СМС КОДА
               Pinput(
                 length: 5,
                 defaultPinTheme: defaultPinTheme,
                 focusedPinTheme: focusedPinTheme,
-                // Анимация при вводе
                 pinAnimationType: PinAnimationType.scale,
                 onChanged: (value) {
                   setState(() {
                     _code = value;
-                    // Как только начинаем стирать или вводить заново — убираем красноту
+                    // Как только стираем или вводим цифру — убираем красноту/зеленоту
                     _hasError = false; 
                     _isSuccess = false;
                   });
@@ -223,6 +240,7 @@ class _OtpScreenState extends State<OtpScreen> {
               
               const SizedBox(height: 24),
 
+              // КНОПКА ПОВТОРНОЙ ОТПРАВКИ
               GestureDetector(
                 onTap: _resendCode,
                 child: Container(
@@ -249,6 +267,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
               const Spacer(),
 
+              // ТЕКСТ СОГЛАШЕНИЯ
               const Text(
                 'Продолжая авторизацию, вы соглашаетесь с политикой\nконфиденциальности и условиями сервиса',
                 textAlign: TextAlign.center,
@@ -261,6 +280,7 @@ class _OtpScreenState extends State<OtpScreen> {
               ),
               const SizedBox(height: 16),
 
+              // КНОПКА ДАЛЕЕ
               SizedBox(
                 width: double.infinity,
                 height: 54,

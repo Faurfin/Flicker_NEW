@@ -7,14 +7,15 @@ from app.db.database import engine, Base
 # Современный способ выполнять код при старте и выключении сервера
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Логика при запуске (создаем таблицы)
+    # Логика при запуске
     async with engine.begin() as conn:
+        # ДОБАВЛЯЕМ ЭТУ СТРОЧКУ: она удалит старую базу перед созданием новой
+        await conn.run_sync(Base.metadata.drop_all) 
+        
+        # Создаем новую базу со всеми колонками
         await conn.run_sync(Base.metadata.create_all)
     
     yield # Здесь приложение работает
-    
-    # Логика при выключении (если нужно закрыть соединения, пишем тут)
-
 app = FastAPI(title="Backend API", lifespan=lifespan)
 
 # <--- ДОБАВИЛИ НАСТРОЙКИ CORS СЮДА --->

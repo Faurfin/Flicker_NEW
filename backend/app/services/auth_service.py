@@ -41,3 +41,17 @@ async def verify_code_and_login(db: AsyncSession, phone_number: str, code: str):
     fake_jwt_token = f"token_for_user_{user.id}"
     
     return fake_jwt_token, is_new_user, "Успешно"
+
+async def update_user_profile(db: AsyncSession, phone_number: str, name: str, interests: list, source: str):
+    # Ищем пользователя по номеру телефона
+    result = await db.execute(select(User).where(User.phone_number == phone_number))
+    user = result.scalars().first()
+    
+    if user:
+        # Обновляем его данные
+        user.name = name
+        user.interests = interests
+        user.discovery_source = source
+        await db.commit() # Сохраняем в базу!
+        return True
+    return False
