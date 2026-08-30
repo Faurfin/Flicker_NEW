@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'profile_setup_screen.dart';
 
 enum VerifyState { typing, loading, error, success }
 
@@ -115,17 +116,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              // ВРЕМЕННАЯ ЗАГЛУШКА: Замени это на свой реальный экран создания профиля
-              builder: (context) => const Scaffold(
-                backgroundColor: Color(0xFF0A0A0A),
-                body: Center(
-                  child: Text(
-                    'Экран регистрации\n(Создание профиля)', 
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white, fontSize: 24),
-                  ),
-                ),
-              ),
+              builder: (context) => ProfileSetupScreen(), // Убрали const - всё работает!
             ),
           );
         });
