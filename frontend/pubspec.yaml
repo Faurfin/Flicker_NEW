@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  shared_preferences: ^2.2.2 
   
   # Библиотека для работы с сетью и бэкендом
   dio: ^5.4.0
@@ -21,7 +22,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
+  assets:
+    - assets/images/onboarding_1.jpg
+    - assets/images/onboarding_2.jpg
+    - assets/images/onboarding_3.jpg
   # В будущем, когда ты скачаешь картинки или шрифты (Manrope, Inter), 
   # их нужно будет раскомментировать и прописать здесь:
   # assets:
@@ -33,3 +37,6 @@ flutter:
   #       - asset: assets/fonts/Manrope-Regular.ttf
   #       - asset: assets/fonts/Manrope-Bold.ttf
   #         weight: 700
+
+
+  
