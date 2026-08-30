@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // Импорт для SVG
+import 'verify_code_screen.dart'; 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -218,8 +221,49 @@ class _LoginScreenState extends State<LoginScreen> {
                     elevation: 0,
                   ),
                   onPressed: _isPhoneValid
-                      ? () {
-                          // Логика перехода дальше
+                      ? () async {
+                          // Получаем чистый номер для БД: +79261234567
+                          final rawPhone = _phoneController.text.replaceAll(' ', '');
+                          final backendPhone = '+7$rawPhone';
+                          
+                          try {
+                            // 1. Отправляем реальный POST-запрос на бэкенд FastAPI
+                            final url = Uri.parse('http://127.0.0.1:8000/api/auth/send-code');
+                            // ВАЖНО: Если твой эндпоинт называется иначе (например /api/auth/send-code), измени URL выше.
+
+                            final response = await http.post(
+                              url,
+                              headers: {'Content-Type': 'application/json'},
+                              body: jsonEncode({'phone_number': backendPhone}), // Исправили на phone_number
+                            );
+
+                            if (response.statusCode == 200 || response.statusCode == 201) {
+                              // Бэкенд успешно принял номер и напечатал код в терминале!
+                              print("Успех! Ответ сервера: ${response.body}");
+
+                              // 2. Форматируем номер для красивого отображения на следующем экране
+                              final formattedPhone = '+7 (${rawPhone.substring(0, 3)}) ${rawPhone.substring(3, 6)}-${rawPhone.substring(6, 8)}-${rawPhone.substring(8, 10)}';
+
+                              // 3. Переводим на экран СМС
+                              if (context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => VerifyCodeScreen(
+                                      phoneNumber: formattedPhone,
+                                      rawPhoneNumber: backendPhone, // Передаем чистый номер, чтобы потом отправить код проверки
+                                    ),
+                                  ),
+                                );
+                              }
+                            } else {
+                              // Если сервер вернул ошибку (например 422 Validation Error)
+                              print("Ошибка бэкенда: ${response.statusCode} - ${response.body}");
+                            }
+                          } catch (e) {
+                            // Если сервер вообще выключен или недоступен
+                            print("Ошибка сети: $e");
+                          }
                         }
                       : null, 
                   child: const Text(
