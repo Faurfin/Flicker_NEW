@@ -42,16 +42,35 @@ async def verify_code_and_login(db: AsyncSession, phone_number: str, code: str):
     
     return fake_jwt_token, is_new_user, "Успешно"
 
-async def update_user_profile(db: AsyncSession, phone_number: str, name: str, interests: list, source: str):
-    # Ищем пользователя по номеру телефона
+async def update_user_profile(
+    db: AsyncSession, 
+    phone_number: str, 
+    name: str, 
+    interests: list, 
+    discovery_source: str, # Имя аргумента теперь точно совпадает
+    avatar_url: str = None
+) -> bool:
+    from sqlalchemy.future import select
+    from app.db.models import User
+    
+    # Ищем пользователя в базе
     result = await db.execute(select(User).where(User.phone_number == phone_number))
     user = result.scalars().first()
     
-    if user:
-        # Обновляем его данные
-        user.name = name
-        user.interests = interests
-        user.discovery_source = source
-        await db.commit() # Сохраняем в базу!
-        return True
-    return False
+    if not user:
+        return False
+        
+    # Обновляем данные
+    user.name = name
+    user.interests = interests
+    
+    # Если в твоей модели БД колонка называется просто source, замени строку ниже на user.source = discovery_source
+    user.discovery_source = discovery_source 
+    
+    if avatar_url:
+        user.avatar_url = avatar_url
+        
+    user.is_new_user = False # Снимаем флаг нового пользователя
+    
+    await db.commit()
+    return True

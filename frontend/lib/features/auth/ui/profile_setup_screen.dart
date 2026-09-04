@@ -81,7 +81,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     );
 
     try {
-      final url = Uri.parse('http://127.0.0.1:8000/auth/update-profile');
+      final url = Uri.parse('http://127.0.0.1:8000/api/auth/update-profile');
       
       final Map<String, dynamic> requestBody = {
         'phone_number': widget.phoneNumber, 

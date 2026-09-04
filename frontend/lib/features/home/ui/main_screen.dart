@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -11,21 +12,22 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
+  // Цвета
   final Color _bgColor = const Color(0xFF0A0A0A);
-  final Color _accentColor = const Color(0xFFC7F431);
-  final Color _textGrey = const Color(0xFFA1A1AA);
-  final Color _navBgColor = const Color(0xFF161616);
-  final Color _navBorderColor = const Color(0xFF27272A);
+  final Color _accentColor = const Color(0xFFC7F431); // Brand/900
+  final Color _textGrey = const Color(0xFFA1A1AA);    // Gray/600
+  final Color _navBgColor = const Color(0xFF1C1C1C).withOpacity(0.5); // 1C1C1C, 50%
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bgColor,
+      extendBody: true, // Позволяет контенту заходить под нижнюю навигацию для эффекта размытия
       body: SafeArea(
+        bottom: false, // Отключаем нижнюю безопасную зону для контента, чтобы он уходил под панель
         child: Column(
           children: [
             _buildHeader(),
-            
             Expanded(
               child: _currentIndex == 0 
                   ? _buildEmptyState() 
@@ -39,6 +41,7 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
       ),
+      // Плавающая нижняя панель навигации
       bottomNavigationBar: _buildBottomNav(),
     );
   }
@@ -49,19 +52,10 @@ class _MainScreenState extends State<MainScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          SvgPicture.asset(
-            'assets/icons/logo.svg', 
-            height: 26,
-          ),
+          SvgPicture.asset('assets/icons/logo.svg', height: 26),
           GestureDetector(
-            onTap: () {
-              // TODO: Открыть уведомления
-            },
-            child: SvgPicture.asset(
-              'assets/icons/notification.svg',
-              width: 28,
-              height: 28,
-            ),
+            onTap: () {}, // Уведомления
+            child: SvgPicture.asset('assets/icons/bell.svg', width: 28),
           ),
         ],
       ),
@@ -74,20 +68,14 @@ class _MainScreenState extends State<MainScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(
-            'assets/images/home_empty.png',
-            height: 240,
-            fit: BoxFit.contain,
-          ),
+          // Иллюстрация
+          Image.asset('assets/images/illustration.png', height: 240, fit: BoxFit.contain),
           const SizedBox(height: 32),
 
+          // Заголовок
           RichText(
             text: TextSpan(
-              style: const TextStyle(
-                fontSize: 24, 
-                fontWeight: FontWeight.w700, 
-                letterSpacing: -0.5,
-              ),
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5),
               children: [
                 const TextSpan(text: 'Здесь пока ', style: TextStyle(color: Colors.white)),
                 TextSpan(text: 'тихо', style: TextStyle(color: _accentColor)),
@@ -96,78 +84,83 @@ class _MainScreenState extends State<MainScreen> {
           ),
           const SizedBox(height: 12),
 
+          // Подзаголовок
           Text(
             'Добавьте друзей, чтобы первыми\nвидеть их новые истории',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: _textGrey,
-              fontSize: 15,
-              height: 1.4,
-            ),
+            style: TextStyle(color: _textGrey, fontSize: 16, height: 1.4, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 40),
 
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _accentColor,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+          // Кнопка строго по Figma: W 231, H 48, Radius 8
+          SizedBox(
+            width: 231,
+            height: 48,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _accentColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
+              ),
+              onPressed: () => setState(() => _currentIndex = 1),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/add_friend.svg',
+                    width: 20, // Немного уменьшили иконку для высоты 48
+                    colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
                   ),
-                  elevation: 0,
-                ),
-                onPressed: () {
-                  setState(() => _currentIndex = 1);
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SvgPicture.asset(
-                      'assets/icons/add_friend.svg',
-                      width: 24,
-                      height: 24,
-                      colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Добавить друзей',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Добавить друзей',
+                    style: TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 40), 
+          const SizedBox(height: 80), // Отступ под плавающую навигацию
         ],
       ),
     );
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      padding: const EdgeInsets.only(top: 12, bottom: 24), 
-      decoration: BoxDecoration(
-        color: _navBgColor,
-        border: Border(
-          top: BorderSide(color: _navBorderColor, width: 1),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0), // Отступ от нижнего края экрана
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Обрезка для эффекта размытия (Radius 12)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Background blur
+                child: Container(
+                  width: 367,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: _navBgColor, // 1C1C1C, 50%
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _buildNavItem(0, 'Главная', 'assets/icons/nav_home.svg'),
+                      _buildNavItem(1, 'Поиск', 'assets/icons/nav_search.svg'),
+                      _buildCenterAddButton(),
+                      _buildNavItem(3, 'Чаты', 'assets/icons/nav_chats.svg'),
+                      _buildNavItem(4, 'Профиль', 'assets/icons/nav_profile.svg'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _buildNavItem(0, 'Главная', 'assets/icons/nav_home.svg'),
-          _buildNavItem(1, 'Поиск', 'assets/icons/nav_search.svg'),
-          _buildCenterAddButton(),
-          _buildNavItem(3, 'Чаты', 'assets/icons/nav_chats.svg'),
-          _buildNavItem(4, 'Профиль', 'assets/icons/nav_profile.svg'),
-        ],
       ),
     );
   }
@@ -186,8 +179,8 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             SvgPicture.asset(
               iconPath,
-              width: 28,
-              height: 28,
+              width: 24,
+              height: 24,
               colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
             ),
             const SizedBox(height: 4),
@@ -196,7 +189,7 @@ class _MainScreenState extends State<MainScreen> {
               style: TextStyle(
                 color: color, 
                 fontSize: 11, 
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
               ),
             ),
           ],
@@ -208,23 +201,13 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildCenterAddButton() {
     return GestureDetector(
       onTap: () {
-        // TODO: Открыть меню выбора (Игры, Спорт, Оффлайн)
+        // TODO: Открыть меню выбора активности
       },
-      child: Container(
-        width: 56,
-        height: 40,
-        margin: const EdgeInsets.only(bottom: 4), 
-        decoration: BoxDecoration(
-          color: _accentColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: SvgPicture.asset(
-            'assets/icons/nav_add.svg',
-            width: 24,
-            height: 24,
-            colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
-          ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 2.0),
+        child: SvgPicture.asset(
+          'assets/icons/nav_center.svg',
+          width: 52, // Ширина центрального салатового квадрата
         ),
       ),
     );

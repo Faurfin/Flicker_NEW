@@ -16,4 +16,5 @@ class ProfileUpdateRequest(BaseModel):
     phone_number: str
     name: str
     interests: List[str]
-    discovery_source: str
+    discovery_source: Optional[str] = None
+    avatar_base64: Optional[str] = None
