@@ -16,7 +16,10 @@ dependencies:
   dio: ^5.4.0
   pinput: ^3.0.1
   http: ^1.6.0
-
+  qr_flutter: ^4.1.0
+  qr: ^3.0.2
+  share_plus: ^13.3.0
+  image_gallery_saver: ^2.0.3
 dev_dependencies:
   flutter_test:
     sdk: flutter

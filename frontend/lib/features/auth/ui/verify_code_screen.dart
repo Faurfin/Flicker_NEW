@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'profile_setup_screen.dart';
 import '../../home/ui/main_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum VerifyState { typing, loading, error, success }
 
@@ -96,9 +97,15 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         setState(() => _state = VerifyState.success);
         
+        // 1. Сохраняем номер пользователя в память телефона
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('current_phone', widget.rawPhoneNumber);
+        
+        // 2. Достаем ответ от сервера и проверяем, новый ли это пользователь
         final responseData = jsonDecode(response.body);
         final bool isNewUser = responseData['is_new_user'] ?? true; 
         
+        // 3. Переводим на нужный экран
         Future.delayed(const Duration(milliseconds: 500), () {
           if (!mounted) return;
           if (isNewUser) {

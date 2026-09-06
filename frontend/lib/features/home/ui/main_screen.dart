@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'search_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -31,12 +32,14 @@ class _MainScreenState extends State<MainScreen> {
             Expanded(
               child: _currentIndex == 0 
                   ? _buildEmptyState() 
-                  : Center(
-                      child: Text(
-                        'Экран $_currentIndex',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
+                  : _currentIndex == 1 
+                      ? const SearchScreen() // Показываем новый экран поиска!
+                      : Center(
+                          child: Text(
+                            'Экран $_currentIndex',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
             ),
           ],
         ),
