@@ -205,7 +205,7 @@ class _QrScreenState extends State<QrScreen> with SingleTickerProviderStateMixin
                                           painter: QrDotPainter(
                                             data: _inviteLink.isEmpty ? "https://fliker.app" : _inviteLink,
                                             color: Colors.white,
-                                            dotScale: 0.6, 
+                                            dotScale: 0.8, 
                                           ),
                                         ),
                                         
