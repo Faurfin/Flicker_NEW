@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, not_
 from pydantic import BaseModel
 from app.db.database import get_db
 from app.db.models import User, HiddenRecommendation
 from app.schemas.users import RecommendedUser, HideUserRequest
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/users", tags=["Пользователи"])
 
@@ -119,3 +120,33 @@ async def get_my_profile(phone_number: str, db: AsyncSession = Depends(get_db)):
         avatar=avatar,
         link=f"fliker://app/profile/{username}"
     )
+
+
+@router.get("/search")
+async def search_users(
+    q: str = Query(""), 
+    phone_number: str = Query(None),
+    db: AsyncSession = Depends(get_db)
+):
+    stmt = select(User)
+    
+    if phone_number:
+        stmt = stmt.filter(User.phone_number != phone_number)
+
+    if q.strip():
+        stmt = stmt.filter(User.name.ilike(f"%{q}%")).limit(20)
+    else:
+        stmt = stmt.limit(5)
+        
+    result = await db.execute(stmt)
+    users = result.scalars().all()
+    
+    results = []
+    for user in users:
+        results.append({
+            "id": user.id,
+            "username": user.name, 
+            "avatar": getattr(user, 'avatar_url', "https://via.placeholder.com/150"),
+            "followers_count": getattr(user, 'followers_count', 24) 
+        })
+    return results
