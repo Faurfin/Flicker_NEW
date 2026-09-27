@@ -26,7 +26,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final Color _glassColor = const Color(0xFF1C1C1C).withOpacity(0.5); 
   
   // Базовый URL сервера (замени на IP компа при тесте на реальном устройстве)
-  final String _baseUrl = 'http://127.0.0.1:8000';
+  final String _baseUrl = 'https://api.web-flicker.online';
 
   @override
   void initState() {

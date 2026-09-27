@@ -84,7 +84,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     setState(() => _state = VerifyState.loading);
 
     try {
-      final url = Uri.parse('http://127.0.0.1:8000/api/auth/verify-code');
+      final url = Uri.parse('https://api.web-flicker.online/api/auth/verify-code');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -136,7 +136,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   Future<void> _resendCode() async {
     setState(() => _state = VerifyState.loading);
     try {
-      final url = Uri.parse('http://127.0.0.1:8000/api/auth/send-code');
+      final url = Uri.parse('https://api.web-flicker.online/api/auth/send-code');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},

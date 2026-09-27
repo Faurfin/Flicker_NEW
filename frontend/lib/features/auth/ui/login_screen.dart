@@ -228,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           
                           try {
                             // 1. Отправляем реальный POST-запрос на бэкенд FastAPI
-                            final url = Uri.parse('http://127.0.0.1:8000/api/auth/send-code');
+                            final url = Uri.parse('https://api.web-flicker.online/api/auth/send-code');
                             // ВАЖНО: Если твой эндпоинт называется иначе (например /api/auth/send-code), измени URL выше.
 
                             final response = await http.post(

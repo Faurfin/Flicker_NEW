@@ -9,8 +9,7 @@ class ApiClient {
 
   ApiClient._internal() : dio = Dio(
     BaseOptions(
-      // ВНИМАНИЕ: Для эмулятора Android пиши 10.0.2.2, для iOS или реального телефона пиши IP компьютера (например, 192.168.1.X)
-      baseUrl: 'http://127.0.0.1:8000/api', 
+      baseUrl: 'https://api.web-flicker.online/api', 
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
       headers: {

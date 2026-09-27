@@ -1,25 +1,32 @@
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware  # <--- ДОБАВИЛИ ИМПОРТ
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.auth import router as auth_router
 from app.db.database import engine, Base
 from app.api.users import router as users_router
 from fastapi.staticfiles import StaticFiles
-# Современный способ выполнять код при старте и выключении сервера
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Логика при запуске
     async with engine.begin() as conn:
-        # ДОБАВЛЯЕМ ЭТУ СТРОЧКУ: она удалит старую базу перед созданием новой
-        await conn.run_sync(Base.metadata.drop_all) 
-        
-        # Создаем новую базу со всеми колонками
+        # УБРАЛИ drop_all, чтобы база больше никогда не удалялась!
         await conn.run_sync(Base.metadata.create_all)
-    
-    yield # Здесь приложение работает
+    yield
+
+# Жестко указываем путь на корень проекта (там, где запускается uvicorn -> /code/static)
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_DIR = os.path.join(ROOT_DIR, "static")
+
+if not os.path.exists(STATIC_DIR):
+    os.makedirs(STATIC_DIR)
+
 app = FastAPI(title="Backend API", lifespan=lifespan)
 
+# Монтируем правильную папку
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# ... дальше твои настройки CORS и роутеры ...
 # <--- ДОБАВИЛИ НАСТРОЙКИ CORS СЮДА --->
 app.add_middleware(
     CORSMiddleware,

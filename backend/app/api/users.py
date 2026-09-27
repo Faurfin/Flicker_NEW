@@ -53,7 +53,7 @@ async def get_recommendations(
         
         avatar = u.avatar_url
         if avatar and not avatar.startswith("http"):
-            avatar = f"http://127.0.0.1:8000/{avatar.lstrip('/')}"
+            avatar = f"https://api.web-flicker.online/{avatar.lstrip('/')}"
         elif not avatar:
             avatar = "https://i.pravatar.cc/150" # Заглушка, если человек реально не загрузил фото 
 
@@ -107,7 +107,7 @@ async def get_my_profile(phone_number: str, db: AsyncSession = Depends(get_db)):
     # Формируем правильную ссылку на аватар
     avatar = current_user.avatar_url
     if avatar and not avatar.startswith("http"):
-        avatar = f"http://127.0.0.1:8000/{avatar.lstrip('/')}"
+        avatar = f"https://api.web-flicker.online/{avatar.lstrip('/')}"
     elif not avatar:
         avatar = "https://i.pravatar.cc/150"
 

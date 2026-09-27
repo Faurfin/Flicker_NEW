@@ -33,7 +33,7 @@ class _RegistrationFlowState extends State<RegistrationFlow> {
     setState(() => _isLoading = true);
 
     try {
-      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:8000/api'));
+      final dio = Dio(BaseOptions(baseUrl: 'https://api.web-flicker.online/api'));
       
       final response = await dio.post('/auth/update-profile', data: {
         'phone_number': widget.phoneNumber,

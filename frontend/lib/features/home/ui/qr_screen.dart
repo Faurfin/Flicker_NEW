@@ -10,7 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:qr/qr.dart'; 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 
 class QrScreen extends StatefulWidget {
   const QrScreen({super.key});
@@ -72,7 +72,7 @@ class _QrScreenState extends State<QrScreen> with SingleTickerProviderStateMixin
 
     try {
       final encodedPhone = Uri.encodeComponent(phone);
-      final url = Uri.parse('http://127.0.0.1:8000/api/users/me?phone_number=$encodedPhone');
+      final url = Uri.parse('https://api.web-flicker.online/api/users/me?phone_number=$encodedPhone');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -115,7 +115,7 @@ class _QrScreenState extends State<QrScreen> with SingleTickerProviderStateMixin
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-      final result = await ImageGallerySaver.saveImage(
+      final result = await ImageGallerySaverPlus.saveImage(
         pngBytes, 
         quality: 100, 
         name: "Fliker_QR_$_username"

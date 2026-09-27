@@ -18,7 +18,18 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
   # Наше FastAPI приложение (пока закомментировано или не используется, но готово к запуску)
   web:
     build: .
@@ -30,6 +41,8 @@ services:
     depends_on:
       - db
       - redis
-
+    volumes:
+      - static_data:/code/static
 volumes:
   postgres_data:
+  static_data:

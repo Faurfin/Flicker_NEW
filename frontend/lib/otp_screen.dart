@@ -58,7 +58,7 @@ class _OtpScreenState extends State<OtpScreen> {
     });
 
     try {
-      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:8000/api')); 
+      final dio = Dio(BaseOptions(baseUrl: 'https://api.web-flicker.online/api')); 
       
       final response = await dio.post('/auth/verify-code', data: {
         'phone_number': widget.phoneNumber,
@@ -113,7 +113,7 @@ class _OtpScreenState extends State<OtpScreen> {
     if (_secondsLeft > 0) return;
     
     try {
-      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:8000/api'));
+      final dio = Dio(BaseOptions(baseUrl: 'https://api.web-flicker.online/api'));
       await dio.post('/auth/send-code', data: {
         'phone_number': widget.phoneNumber,
       });
