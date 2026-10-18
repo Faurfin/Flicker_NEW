@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
+import '../../profile/ui/alien_profile_screen.dart';
 import 'package:frontend/features/home/ui/qr_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -18,15 +18,14 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
-  
   bool _isLoading = false;
   List<dynamic> _searchResults = [];
 
   final Color _bgColor = const Color(0xFF0A0A0A);
-  final Color _glassColor = const Color(0xFF1C1C1C).withOpacity(0.5); 
-  
-  // Базовый URL сервера (замени на IP компа при тесте на реальном устройстве)
-  final String _baseUrl = 'https://api.web-flicker.online';
+  final Color _glassColor = const Color(0xFF1C1C1C).withOpacity(0.5);
+
+  // Базовый URL для локальной разработки
+  final String _baseUrl = 'http://localhost:8000';
 
   @override
   void initState() {
@@ -43,7 +42,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    
+
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _performSearch(query.trim());
     });
@@ -55,11 +54,13 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final phone = prefs.getString('current_phone') ?? '';
-      
+
       final encodedQuery = Uri.encodeComponent(query);
       final encodedPhone = Uri.encodeComponent(phone);
+      final url = Uri.parse(
+        '$_baseUrl/api/users/search?q=$encodedQuery&phone_number=$encodedPhone',
+      );
 
-      final url = Uri.parse('$_baseUrl/api/users/search?q=$encodedQuery&phone_number=$encodedPhone');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -79,9 +80,8 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isQueryEmpty = _searchController.text.trim().isEmpty;
-    final String listTitle = isQueryEmpty 
-        ? 'Похожие пользователи' 
-        : 'Результаты которые мы нашли';
+    final String listTitle =
+        isQueryEmpty ? 'Похожие знакомые' : 'Результаты поиска';
 
     return Scaffold(
       backgroundColor: _bgColor,
@@ -92,7 +92,6 @@ class _SearchScreenState extends State<SearchScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: BackdropFilter(
@@ -106,7 +105,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
-                        fontWeight: FontWeight.w400, 
+                        fontWeight: FontWeight.w400,
                         height: 24 / 16,
                       ),
                       textAlignVertical: TextAlignVertical.center,
@@ -118,7 +117,10 @@ class _SearchScreenState extends State<SearchScreen> {
                           padding: const EdgeInsets.all(10.5),
                           child: SvgPicture.asset(
                             'assets/icons/search_glass.svg',
-                            colorFilter: const ColorFilter.mode(Color(0xFF666666), BlendMode.srcIn),
+                            colorFilter: const ColorFilter.mode(
+                              Color(0xFF666666),
+                              BlendMode.srcIn,
+                            ),
                           ),
                         ),
                         suffixIcon: !isQueryEmpty
@@ -131,21 +133,23 @@ class _SearchScreenState extends State<SearchScreen> {
                                   padding: const EdgeInsets.all(10.5),
                                   child: SvgPicture.asset(
                                     'assets/icons/close_cross.svg',
-                                    colorFilter: const ColorFilter.mode(Color(0xFF666666), BlendMode.srcIn),
+                                    colorFilter: const ColorFilter.mode(
+                                      Color(0xFF666666),
+                                      BlendMode.srcIn,
+                                    ),
                                   ),
                                 ),
                               )
                             : null,
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 10.5), 
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 10.5),
                       ),
                     ),
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -159,23 +163,35 @@ class _SearchScreenState extends State<SearchScreen> {
                     filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
                       height: 73,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(color: _glassColor),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
+                          const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
+                            children: [
                               Text(
                                 'Пригласите своих друзей',
-                                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500, height: 24/16),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  height: 24 / 16,
+                                ),
                               ),
-                              SizedBox(height: 1), 
+                              SizedBox(height: 1),
                               Text(
                                 'fliker://app/profile/invite-friends',
-                                style: TextStyle(color: Color(0xFF8E8E93), fontSize: 13, height: 18/13),
+                                style: TextStyle(
+                                  color: Color(0xFF8E8E93),
+                                  fontSize: 13,
+                                  height: 18 / 13,
+                                ),
                               ),
                             ],
                           ),
@@ -183,7 +199,10 @@ class _SearchScreenState extends State<SearchScreen> {
                             'assets/icons/invite_link.svg',
                             width: 24,
                             height: 24,
-                            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white,
+                              BlendMode.srcIn,
+                            ),
                           ),
                         ],
                       ),
@@ -191,19 +210,16 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              // Точные параметры текста пустого состояния
-              if (!isQueryEmpty && _searchResults.isEmpty && !_isLoading) 
+              if (!isQueryEmpty && _searchResults.isEmpty && !_isLoading)
                 const SizedBox(
-                  width: 272, // Топографическая ширина из Figma
+                  width: 272,
                   child: Text(
-                    'К сожалению мы ничего не смогли найти по вашему запросу',
+                    'К сожалению, поиск не дал никаких результатов',
                     style: TextStyle(
-                      color: Color(0xFF8E8E93), 
+                      color: Color(0xFF8E8E93),
                       fontSize: 16,
-                      fontWeight: FontWeight.w400, 
+                      fontWeight: FontWeight.w400,
                       height: 24 / 16,
                     ),
                   ),
@@ -212,19 +228,22 @@ class _SearchScreenState extends State<SearchScreen> {
                 Text(
                   listTitle,
                   style: const TextStyle(
-                    color: Color(0xFF8E8E93), 
-                    fontSize: 16, 
-                    fontWeight: FontWeight.w400, 
+                    color: Color(0xFF8E8E93),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
                     height: 24 / 16,
                   ),
                 ),
                 const SizedBox(height: 20),
                 Expanded(child: _buildSearchResults()),
               ],
-              
               if (_isLoading && _searchResults.isEmpty)
                 const Expanded(
-                  child: Center(child: CircularProgressIndicator(color: Color(0xFFC7F431))),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFC7F431),
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -236,9 +255,8 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildSearchResults() {
     return ListView.separated(
       itemCount: _searchResults.length + 1,
-      separatorBuilder: (context, index) => const SizedBox(height: 20), 
+      separatorBuilder: (context, index) => const SizedBox(height: 20),
       itemBuilder: (context, index) {
-        
         if (index == _searchResults.length) {
           return Padding(
             padding: const EdgeInsets.only(top: 12.0, bottom: 40.0),
@@ -257,7 +275,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,
-                        fontWeight: FontWeight.w500, 
+                        fontWeight: FontWeight.w500,
                         height: 20 / 14,
                       ),
                     ),
@@ -269,58 +287,76 @@ class _SearchScreenState extends State<SearchScreen> {
         }
 
         final user = _searchResults[index];
-        
-        // Преобразование относительной ссылки в абсолютную
+        final int? userId = user['id'] is int
+            ? user['id'] as int
+            : int.tryParse(user['id']?.toString() ?? '');
+
         String avatarUrl = user['avatar'] ?? "https://via.placeholder.com/150";
         if (avatarUrl.startsWith('/')) {
           avatarUrl = '$_baseUrl$avatarUrl';
         }
 
-        return Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(shape: BoxShape.circle),
-              clipBehavior: Clip.antiAlias,
-              child: Image.network(
-                avatarUrl, // Используем обработанный URL
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stack) => Container(
-                  color: const Color(0xFF151515),
-                  child: const Icon(Icons.person, color: Colors.white),
+        void openUserProfile() {
+          if (userId == null) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AlienProfileScreen(userId: userId),
+            ),
+          );
+        }
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: openUserProfile,
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: openUserProfile,
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: const BoxDecoration(shape: BoxShape.circle),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.network(
+                    avatarUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stack) => Container(
+                      color: const Color(0xFF151515),
+                      child: const Icon(Icons.person, color: Colors.white),
+                    ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 16),
-            
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    user['username'] ?? "User",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600, 
-                      height: 24 / 16,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user['username'] ?? "User",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        height: 24 / 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2), 
-                  Text(
-                    'Подписаны ${user['followers_count'] ?? 0} человека',
-                    style: const TextStyle(
-                      color: Color(0xFF8E8E93), 
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400, 
-                      height: 20 / 14,
+                    const SizedBox(height: 2),
+                    Text(
+                      'Подписаны ${user['followers_count'] ?? 0} человека',
+                      style: const TextStyle(
+                        color: Color(0xFF8E8E93),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        height: 20 / 14,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );

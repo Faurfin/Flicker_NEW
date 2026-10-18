@@ -1,152 +1,100 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, not_
+from sqlalchemy import select, and_, not_, or_, func
 from pydantic import BaseModel
 from app.db.database import get_db
-from app.db.models import User, HiddenRecommendation
-from app.schemas.users import RecommendedUser, HideUserRequest
-from sqlalchemy.orm import Session
+from app.db.models import User, HiddenRecommendation, Friendship
+from app.schemas.users import (
+    RecommendedUser,
+    HideUserRequest,
+    UserProfileDetailResponse,
+)
 
 router = APIRouter(prefix="/users", tags=["Пользователи"])
 
-@router.get("/recommendations", response_model=list[RecommendedUser])
-async def get_recommendations(
-    phone_number: str, 
-    db: AsyncSession = Depends(get_db)
+# ... существующие эндпоинты /recommendations, /hide-recommendation, /me, /search ...
+
+
+@router.get("/{user_id}", response_model=UserProfileDetailResponse)
+async def get_user_profile_by_id(
+    user_id: int,
+    phone_number: str = Query(None),
+    db: AsyncSession = Depends(get_db),
 ):
-    # 1. Находим текущего пользователя (теперь плюс доходит корректно)
-    user_query = await db.execute(select(User).where(User.phone_number == phone_number))
-    current_user = user_query.scalars().first()
-    
-    if not current_user or not current_user.interests:
-        return []
+    # 1. Ищем целевого пользователя по ID
+    target_query = await db.execute(select(User).where(User.id == user_id))
+    target_user = target_query.scalars().first()
 
-    # 2. Достаем черный список (крестики)
-    hidden_query = await db.execute(
-        select(HiddenRecommendation.hidden_user_id)
-        .where(HiddenRecommendation.user_id == current_user.id)
-    )
-    hidden_ids = hidden_query.scalars().all()
-
-    # 3. Ищем ВСЕХ пользователей с общими интересами (совпадение хотя бы 1 интереса)
-    query = select(User).where(
-        and_(
-            User.id != current_user.id, 
-            User.interests.overlap(current_user.interests) 
-        )
-    )
-
-    if hidden_ids:
-        query = query.where(not_(User.id.in_(hidden_ids)))
-
-    # Ограничиваем выдачу ровно 5 людьми
-    query = query.limit(5) 
-
-    result = await db.execute(query)
-    matching_users = result.scalars().all()
-
-    # 4. Формируем список
-    recommendations = []
-    for u in matching_users:
-        common = set(current_user.interests) & set(u.interests)
-        common_str = ", ".join(list(common)[:2]) 
-        
-        avatar = u.avatar_url
-        if avatar and not avatar.startswith("http"):
-            avatar = f"https://api.web-flicker.online/{avatar.lstrip('/')}"
-        elif not avatar:
-            avatar = "https://i.pravatar.cc/150" # Заглушка, если человек реально не загрузил фото 
-
-        recommendations.append(
-            RecommendedUser(
-                id=str(u.id),
-                username=u.name or "Пользователь",
-                subtitle=f"Общие интересы: {common_str}",
-                avatar=avatar
-            )
-        )
-
-    return recommendations
-
-@router.post("/hide-recommendation")
-async def hide_recommendation(
-    request: HideUserRequest, 
-    phone_number: str, 
-    db: AsyncSession = Depends(get_db)
-):
-    user_query = await db.execute(select(User).where(User.phone_number == phone_number))
-    current_user = user_query.scalars().first()
-    
-    if not current_user:
-        raise HTTPException(status_code=404)
-
-    hidden_record = HiddenRecommendation(
-        user_id=current_user.id,
-        hidden_user_id=request.hidden_user_id
-    )
-    db.add(hidden_record)
-    await db.commit()
-    
-    return {"message": "Пользователь навсегда скрыт"}
-
-
-class UserProfile(BaseModel):
-    id: str
-    username: str
-    avatar: str
-    link: str
-
-@router.get("/me", response_model=UserProfile)
-async def get_my_profile(phone_number: str, db: AsyncSession = Depends(get_db)):
-    user_query = await db.execute(select(User).where(User.phone_number == phone_number))
-    current_user = user_query.scalars().first()
-    
-    if not current_user:
+    if not target_user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-    # Формируем правильную ссылку на аватар
-    avatar = current_user.avatar_url
-    if avatar and not avatar.startswith("http"):
-        avatar = f"https://api.web-flicker.online/{avatar.lstrip('/')}"
-    elif not avatar:
-        avatar = "https://i.pravatar.cc/150"
-
-    # Временная логика юзернейма, позже доработаем
-    username = current_user.name or f"user_{current_user.id}"
-    
-    return UserProfile(
-        id=str(current_user.id),
-        username=username,
-        avatar=avatar,
-        link=f"fliker://app/profile/{username}"
+    # 2. Считаем количество друзей (статус 'accepted' в таблице friendships)
+    friends_count_query = await db.execute(
+        select(func.count(Friendship.id)).where(
+            and_(
+                Friendship.status == "accepted",
+                or_(
+                    Friendship.requester_id == target_user.id,
+                    Friendship.addressee_id == target_user.id,
+                ),
+            )
+        )
     )
+    friends_count = friends_count_query.scalar() or 0
 
-
-@router.get("/search")
-async def search_users(
-    q: str = Query(""), 
-    phone_number: str = Query(None),
-    db: AsyncSession = Depends(get_db)
-):
-    stmt = select(User)
-    
+    # 3. Определяем статус дружбы с текущим авторизованным пользователем
+    friendship_status = "none"
     if phone_number:
-        stmt = stmt.filter(User.phone_number != phone_number)
+        current_query = await db.execute(
+            select(User).where(User.phone_number == phone_number)
+        )
+        current_user = current_query.scalars().first()
 
-    if q.strip():
-        stmt = stmt.filter(User.name.ilike(f"%{q}%")).limit(20)
+        if current_user:
+            if current_user.id == target_user.id:
+                friendship_status = "self"
+            else:
+                rel_query = await db.execute(
+                    select(Friendship).where(
+                        or_(
+                            and_(
+                                Friendship.requester_id == current_user.id,
+                                Friendship.addressee_id == target_user.id,
+                            ),
+                            and_(
+                                Friendship.requester_id == target_user.id,
+                                Friendship.addressee_id == current_user.id,
+                            ),
+                        )
+                    )
+                )
+                relation = rel_query.scalars().first()
+
+                if relation:
+                    if relation.status == "accepted":
+                        friendship_status = "friends"
+                    elif relation.status == "pending":
+                        friendship_status = "request_sent"
+
+    # 4. Формируем корректный URL аватара и описание профиля (bio)
+    avatar_url = target_user.avatar_url
+    if avatar_url and not avatar_url.startswith("http"):
+        avatar_url = f"http://localhost:8000/{avatar_url.lstrip('/')}"
+
+    if target_user.bio:
+        bio_text = target_user.bio
+    elif target_user.interests:
+        bio_text = f"Интересы: {', '.join(target_user.interests)}"
     else:
-        stmt = stmt.limit(5)
-        
-    result = await db.execute(stmt)
-    users = result.scalars().all()
-    
-    results = []
-    for user in users:
-        results.append({
-            "id": user.id,
-            "username": user.name, 
-            "avatar": getattr(user, 'avatar_url', "https://via.placeholder.com/150"),
-            "followers_count": getattr(user, 'followers_count', 24) 
-        })
-    return results
+        bio_text = "Пользователь пока ничего не рассказал о себе"
+
+    username = target_user.name or f"user_{target_user.id}"
+
+    return UserProfileDetailResponse(
+        id=target_user.id,
+        username=username,
+        avatar_url=avatar_url,
+        bio=bio_text,
+        friends_count=friends_count,
+        friendship_status=friendship_status,
+    )

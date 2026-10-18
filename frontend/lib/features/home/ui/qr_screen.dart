@@ -72,7 +72,7 @@ class _QrScreenState extends State<QrScreen> with SingleTickerProviderStateMixin
 
     try {
       final encodedPhone = Uri.encodeComponent(phone);
-      final url = Uri.parse('https://api.web-flicker.online/api/users/me?phone_number=$encodedPhone');
+      final url = Uri.parse('http://localhost:8000/api/users/me?phone_number=$encodedPhone');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {

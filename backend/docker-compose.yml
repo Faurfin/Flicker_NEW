@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Наша база данных PostgreSQL
   db:
@@ -12,12 +10,24 @@ services:
       - "5455:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U backend_user -d backend_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+  
   # Наш кэш Redis
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -29,8 +39,10 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - web
-  # Наше FastAPI приложение (пока закомментировано или не используется, но готово к запуску)
+      web:
+        condition: service_started
+
+  # Наше FastAPI приложение
   web:
     build: .
     ports:
@@ -39,10 +51,15 @@ services:
       - DB_HOST=db
       - REDIS_HOST=redis
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - static_data:/code/static
+
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
   static_data:
